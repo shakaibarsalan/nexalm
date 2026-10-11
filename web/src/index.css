@@ -1,0 +1,632 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────
+   NexaLM runs cyan → blue → violet. Every accent below is a point on
+   that run so the product reads as one system rather than a default blue.
+
+   Tokens are space-separated RGB triples consumed as `rgb(var(--token))`
+   — components depend on that shape, so it must not change.
+
+   Light is the base; dark overrides only what changes. */
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Cool neutrals, not warm stone — warm greys fight a cyan-side brand. */
+    --bg: 248 249 251;
+    --bg-elevated: 255 255 255;
+    --bg-subtle: 241 242 246;
+    --border: 226 228 235;
+    --border-strong: 203 206 216;
+
+    /* Three genuinely readable tiers on --bg: ~17:1 / 7.5:1 / 5:1.
+       The old faint tier sat near 2:1 and failed AA outright. */
+    --text: 22 24 33;
+    --text-muted: 75 81 99;
+    --text-faint: 101 107 122;
+
+    /* --accent is a FILL: white type sits on it (5.2:1), and components
+       use it as an avatar/toggle background. --accent-text is the same
+       hue retuned for type on --bg (6.4:1). One colour cannot pass both. */
+    --accent: 37 99 235;
+    --accent-text: 29 78 216;
+    --accent-soft: 228 237 255;
+
+    /* The gradient stops, exposed so anything can borrow the brand run. */
+    --brand-1: 6 182 212;
+    --brand-2: 37 99 235;
+    --brand-3: 124 58 237;
+
+    /* Status colours are darkened from the usual 500s so they clear AA
+       as TYPE on --bg and on --bg-subtle, where the app actually uses them. */
+    --danger: 200 30 30;
+    --success: 20 118 56;
+    --warn: 163 74 7;
+
+    --ring: 37 99 235;
+    --btn-from: 37 99 235;
+    --btn-to: 109 40 217;
+
+    /* Ambient brand wash behind the whole app — kept under 6% so it never
+       eats into text contrast. */
+    --aura-1: 0.05;
+    --aura-2: 0.06;
+
+    /* Shadows are tinted toward ink, not pure black: pure black over a
+       light ground reads as dirt. */
+    --shadow-1: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 1px rgb(16 24 40 / 0.04);
+    --shadow-2: 0 4px 14px -4px rgb(16 24 40 / 0.12), 0 1px 3px rgb(16 24 40 / 0.06);
+    --shadow-3: 0 24px 48px -16px rgb(16 24 40 / 0.24), 0 2px 8px rgb(16 24 40 / 0.08);
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    /* Dark-first product: the ground goes near-black like the brand sheet,
+       and elevation is carried by three distinct steps rather than opacity. */
+    --bg: 9 9 12;
+    --bg-elevated: 19 20 25;
+    --bg-subtle: 27 28 35;
+    --border: 41 43 53;
+    --border-strong: 61 64 78;
+
+    --text: 240 240 245;
+    --text-muted: 161 163 178;
+    --text-faint: 138 140 156;
+
+    /* Brightest blue that still carries white type at 4.6:1 — the avatar
+       and empty-state tiles put white on this. */
+    --accent: 46 107 246;
+    --accent-text: 138 180 255;
+    --accent-soft: 27 42 77;
+
+    --brand-1: 34 211 238;
+    --brand-2: 59 130 246;
+    --brand-3: 139 92 246;
+
+    --danger: 248 113 113;
+    --success: 74 222 128;
+    --warn: 251 191 36;
+
+    --ring: 96 152 255;
+    --btn-from: 46 107 246;
+    --btn-to: 109 74 232;
+
+    --aura-1: 0.07;
+    --aura-2: 0.09;
+
+    /* On a near-black ground only depth of black reads as elevation. */
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-2: 0 6px 20px -6px rgb(0 0 0 / 0.6), 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-3: 0 24px 56px -16px rgb(0 0 0 / 0.75), 0 2px 10px rgb(0 0 0 / 0.5);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply antialiased;
+    color: rgb(var(--text));
+    background-color: rgb(var(--bg));
+    /* Painted on the body so it sits behind every panel instead of washing
+       over text the way a fixed overlay would. */
+    background-image:
+      radial-gradient(46rem 26rem at 8% -8%, rgb(var(--brand-1) / var(--aura-1)), transparent 68%),
+      radial-gradient(42rem 24rem at 96% -4%, rgb(var(--brand-3) / var(--aura-2)), transparent 68%);
+    background-attachment: fixed;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Inter's default tracking is loose at display sizes. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.014em;
+  }
+
+  /* Metrics tables jitter when digits change width; Tailwind's font-mono
+     spans are the ones that stream live numbers. */
+  [class*='font-mono'],
+  code,
+  kbd,
+  pre {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent) / 0.3);
+  }
+
+  /* One visible, consistent keyboard affordance. Text fields opt out —
+     they carry their own ring via .input so the two never stack. */
+  :where(a, button, summary, [role='switch'], [tabindex]):focus-visible {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 2px;
+  }
+
+  input[type='range'] {
+    accent-color: rgb(var(--accent));
+  }
+}
+
+@layer components {
+  .surface {
+    background-color: rgb(var(--bg-elevated));
+    border-color: rgb(var(--border));
+    box-shadow: var(--shadow-2);
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-lg px-3 py-2
+           text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50;
+    /* Quint-ish ease: fast departure, soft landing. Reads as responsive
+       rather than springy. */
+    transition:
+      background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+      color 150ms cubic-bezier(0.2, 0, 0, 1),
+      box-shadow 150ms cubic-bezier(0.2, 0, 0, 1),
+      filter 150ms cubic-bezier(0.2, 0, 0, 1),
+      transform 100ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(0.5px);
+  }
+
+  .btn-primary {
+    color: #fff;
+    /* The brand run, not a flat fill — the one place the gradient earns
+       its keep in chrome. Both stops clear 4.5:1 against white. */
+    background-image: linear-gradient(135deg, rgb(var(--btn-from)), rgb(var(--btn-to)));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      var(--shadow-1);
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.09) saturate(1.04);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      0 6px 18px -8px rgb(var(--accent) / 0.7);
+  }
+
+  .btn-ghost {
+    color: rgb(var(--text-muted));
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: rgb(var(--bg-subtle));
+    color: rgb(var(--text));
+  }
+
+  .input {
+    @apply w-full rounded-lg border px-3 py-2 text-sm outline-none;
+    background-color: rgb(var(--bg-elevated));
+    border-color: rgb(var(--border));
+    color: rgb(var(--text));
+    transition:
+      border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+      box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .input:hover:not(:focus) {
+    border-color: rgb(var(--border-strong));
+  }
+  .input:focus {
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.18);
+  }
+  .input::placeholder {
+    color: rgb(var(--text-faint));
+  }
+
+  /* Utilities the brand needs in more than one place. */
+  .brand-gradient-text {
+    /* Fallback first: if background-clip:text is unsupported the word is
+       still an accent colour rather than invisible. */
+    color: rgb(var(--accent-text));
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--brand-1)),
+      rgb(var(--brand-2)) 45%,
+      rgb(var(--brand-3))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .brand-gradient-text {
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+  }
+
+  .brand-gradient-bg {
+    background-image: linear-gradient(135deg, rgb(var(--brand-1)), rgb(var(--brand-2)) 48%, rgb(var(--brand-3)));
+  }
+
+  /* A hairline rule that fades out — softer than a full-width border. */
+  .brand-rule {
+    height: 1px;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--border-strong)) 20%,
+      rgb(var(--border-strong)) 80%,
+      transparent
+    );
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 0 1px rgb(var(--accent) / 0.35), 0 10px 30px -12px rgb(var(--accent) / 0.55);
+  }
+}
+
+/* The composer is a text field wearing a container's clothes; light the
+   container when the textarea inside takes focus. Degrades to nothing if
+   the markup changes. !important because the box carries an inline
+   border-color, which a stylesheet rule cannot otherwise beat. */
+@supports selector(:has(*)) {
+  [class*='rounded-2xl']:has(> textarea:focus) {
+    border-color: rgb(var(--accent)) !important;
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.14);
+  }
+}
+
+/* ── Scrollbars ─────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--border-strong)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--border-strong));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--text-faint));
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Markdown rendering ─────────────────────────────────── */
+.md {
+  @apply text-[15px] leading-7;
+}
+.md > * + * {
+  @apply mt-4;
+}
+/* Headings get more air above than below so sections group visually. */
+.md h1 { @apply mt-7 text-xl font-semibold tracking-tight; }
+.md h2 { @apply mt-7 text-lg font-semibold tracking-tight; }
+.md h3 { @apply mt-6 text-base font-semibold tracking-tight; }
+.md p  { @apply leading-7; }
+.md ul { @apply list-disc space-y-1.5 pl-6; }
+.md ol { @apply list-decimal space-y-1.5 pl-6; }
+.md li > p { @apply my-0; }
+.md li::marker {
+  color: rgb(var(--text-faint));
+}
+.md a {
+  /* --accent is tuned as a fill; links need the text-safe variant. */
+  color: rgb(var(--accent-text));
+  text-decoration-color: rgb(var(--accent-text) / 0.4);
+  @apply underline underline-offset-2;
+  transition: text-decoration-color 150ms ease;
+}
+.md a:hover {
+  text-decoration-color: rgb(var(--accent-text));
+}
+.md blockquote {
+  @apply border-l-2 pl-4 italic;
+  border-color: rgb(var(--accent) / 0.5);
+  color: rgb(var(--text-muted));
+}
+.md hr {
+  border-color: rgb(var(--border));
+}
+.md table {
+  @apply w-full border-collapse text-sm;
+}
+.md th,
+.md td {
+  @apply border px-3 py-1.5 text-left;
+  border-color: rgb(var(--border));
+}
+.md th {
+  background-color: rgb(var(--bg-subtle));
+  @apply font-semibold;
+}
+
+/* Inline code — but not code inside a fenced block. */
+.md :not(pre) > code {
+  @apply rounded-md px-1.5 py-0.5 font-mono text-[0.85em];
+  background-color: rgb(var(--bg-subtle));
+  border: 1px solid rgb(var(--border));
+  color: rgb(var(--text));
+}
+
+.md pre {
+  @apply overflow-x-auto rounded-xl p-4 font-mono text-[13px] leading-6;
+  background-color: rgb(var(--bg-subtle));
+  border: 1px solid rgb(var(--border));
+  box-shadow: var(--shadow-1);
+}
+.md pre code {
+  @apply bg-transparent p-0;
+  border: 0;
+}
+
+/* highlight.js — themed against our tokens so it works in both modes.
+   Light values are the darker end of each hue so they clear AA on
+   --bg-subtle; dark values are the lighter end. */
+.hljs-comment,
+.hljs-quote { color: rgb(var(--text-faint)); font-style: italic; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type { color: #8b3fbe; }
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-literal,
+.dark .hljs-type { color: #cba6f7; }
+.hljs-string,
+.hljs-regexp,
+.hljs-addition { color: #157540; }
+.dark .hljs-string,
+.dark .hljs-regexp,
+.dark .hljs-addition { color: #a5d6a7; }
+.hljs-number,
+.hljs-built_in { color: #a05a00; }
+.dark .hljs-number,
+.dark .hljs-built_in { color: #ffcb6b; }
+.hljs-title,
+.hljs-section,
+.hljs-function { color: #1d5fd6; }
+.dark .hljs-title,
+.dark .hljs-section,
+.dark .hljs-function { color: #82aaff; }
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable { color: #8a5a00; }
+.dark .hljs-attr,
+.dark .hljs-attribute,
+.dark .hljs-variable { color: #f7a482; }
+
+/* ── Motion ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Model and host selection ───────────────────────────────
+   State reads at a glance because loading weights is expensive: "ready"
+   answers now, "not loaded" costs a minute or more, "too large" never
+   works on this card. A dropdown that hid that difference would let
+   someone pick a model and wait several minutes to learn it cannot run. */
+@layer components {
+  /* Inside the rail now, so no bottom rule: the tab strip already separates it. */
+  .models-panel {
+    @apply flex flex-col gap-3 px-4 py-4;
+  }
+
+  .panel-heading {
+    @apply text-xs font-semibold uppercase tracking-wider;
+    color: rgb(var(--text-faint));
+  }
+
+  .platform-list,
+  .model-list {
+    @apply flex flex-col gap-1.5 m-0 p-0 list-none;
+  }
+
+  .platform {
+    @apply flex items-baseline justify-between gap-3 rounded-md px-2.5 py-2 text-sm;
+    background: rgb(var(--bg-subtle));
+  }
+  .platform-name {
+    @apply font-medium;
+    color: rgb(var(--text));
+  }
+  .platform-state {
+    @apply text-xs;
+    color: rgb(var(--text-muted));
+  }
+  .platform.up .platform-name::before {
+    content: '';
+    @apply inline-block h-2 w-2 rounded-full mr-2 align-middle;
+    background: rgb(var(--brand-1));
+  }
+  .platform.down .platform-name::before {
+    content: '';
+    @apply inline-block h-2 w-2 rounded-full mr-2 align-middle;
+    background: rgb(var(--border-strong));
+  }
+
+  /* Text or image, one at a time. A segmented control rather than two stacked
+     lists: the two kinds are not alternatives to one another, and stacking
+     them buried the image models under a dozen text ones. */
+  /* A shimmer, not a progress bar. sd-server reports a status and a queue
+     position and nothing else -- no step counter -- so a bar would have to
+     invent its position. This says "working" without claiming to know how far. */
+  .image-skeleton {
+    background: linear-gradient(
+      100deg,
+      rgb(var(--bg-subtle)) 30%,
+      rgb(var(--bg-elevated)) 50%,
+      rgb(var(--bg-subtle)) 70%
+    );
+    background-size: 220% 100%;
+    animation: image-shimmer 1.6s ease-in-out infinite;
+    color: rgb(var(--text-faint));
+  }
+  @keyframes image-shimmer {
+    from {
+      background-position: 180% 0;
+    }
+    to {
+      background-position: -80% 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .image-skeleton {
+      animation: none;
+      background: rgb(var(--bg-subtle));
+    }
+  }
+
+  .kind-switch {
+    @apply flex gap-1 rounded-lg p-1;
+    background: rgb(var(--bg-subtle));
+  }
+  .kind-tab {
+    @apply flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium;
+    color: rgb(var(--text-muted));
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .kind-tab:hover:not(:disabled):not(.selected) {
+    color: rgb(var(--text));
+  }
+  .kind-tab.selected {
+    background: rgb(var(--bg-elevated));
+    color: rgb(var(--text));
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  }
+  .kind-tab:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .kind-count {
+    @apply rounded-full px-1.5 text-xs font-normal tabular-nums;
+    background: rgb(var(--bg-subtle));
+    color: rgb(var(--text-faint));
+  }
+  .kind-tab.selected .kind-count {
+    color: rgb(var(--text-muted));
+  }
+
+  .model {
+    @apply flex items-center gap-2 rounded-lg px-2.5 py-2;
+  }
+  .model:hover:not(.too_large) {
+    background: rgb(var(--bg-subtle));
+  }
+  .model.active {
+    background: rgb(var(--accent-soft));
+  }
+  .model.too_large {
+    opacity: 0.55;
+  }
+
+  .model-pick {
+    @apply flex flex-1 flex-col items-start gap-0 text-left min-w-0;
+  }
+  .model-pick:disabled {
+    cursor: not-allowed;
+  }
+  .model-name {
+    @apply text-sm font-medium truncate max-w-full;
+    color: rgb(var(--text));
+  }
+  .model.active .model-name {
+    color: rgb(var(--accent-text));
+  }
+  .model-meta {
+    @apply text-xs tabular-nums;
+    color: rgb(var(--text-faint));
+  }
+
+  .model-state {
+    @apply text-[10px] font-semibold uppercase tracking-wide rounded px-1.5 py-0.5 whitespace-nowrap;
+    background: rgb(var(--bg-subtle));
+    color: rgb(var(--text-muted));
+  }
+  .model-state.ready {
+    background: rgb(var(--accent-soft));
+    color: rgb(var(--accent-text));
+  }
+
+  .model-action {
+    @apply text-xs font-medium rounded px-2 py-1 whitespace-nowrap;
+    border: 1px solid rgb(var(--border-strong));
+    color: rgb(var(--text));
+  }
+  .model-action:hover:not(:disabled) {
+    background: rgb(var(--bg-subtle));
+  }
+  .model-action:disabled {
+    opacity: 0.5;
+  }
+  .model-action.subtle {
+    color: rgb(var(--text-muted));
+  }
+
+  .model-notice {
+    @apply text-xs leading-snug;
+    color: rgb(var(--text-muted));
+  }
+}
+
+/* Host controls sit on the host row itself, so "Start" can never be read as
+   applying to a platform it cannot reach. */
+@layer components {
+  .platform {
+    @apply flex-wrap;
+  }
+  .platform-actions {
+    @apply ml-auto flex items-center gap-1.5;
+  }
+  .platform-manual {
+    @apply text-[10px] font-semibold uppercase tracking-wide rounded px-1.5 py-0.5;
+    background: rgb(var(--bg-elevated));
+    color: rgb(var(--text-faint));
+  }
+}
+
+/* Host selection scopes everything below it, so the selected row has to read as
+   a chosen tab rather than one item in a list. */
+@layer components {
+  .platform {
+    @apply w-full text-left transition-colors;
+  }
+  .platform.selected {
+    background: rgb(var(--accent-soft));
+    box-shadow: inset 2px 0 0 rgb(var(--accent));
+  }
+  .platform.selected .platform-name {
+    color: rgb(var(--accent-text));
+  }
+  .panel-scope {
+    @apply font-normal normal-case tracking-normal;
+    color: rgb(var(--text-faint));
+  }
+
+  /* "Selected" is what this conversation will use; "Loaded" is merely resident
+     on the host. A solid accent read as "currently executing", which it is not
+     -- whether it is executing depends on the worker holding it. */
+  .model-state.active {
+    background: rgb(var(--accent-soft));
+    color: rgb(var(--accent-text));
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.35);
+  }
+  .model.active {
+    background: rgb(var(--accent-soft));
+  }
+  .model-state.no_worker {
+    opacity: 0.6;
+  }
+}

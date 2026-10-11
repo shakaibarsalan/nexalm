@@ -1,0 +1,19 @@
+{
+  "id": "shakaibkaggle/local-llm-gpu-worker",
+  "title": "Local LLM GPU Worker",
+  "code_file": "kaggle_worker_entry.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "shakaibkaggle/local-llm-worker-code",
+    "shakaibkaggle/llamacpp-cuda-sm75"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false
+}

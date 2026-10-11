@@ -1,0 +1,16 @@
+-- Hide the image models until something can actually run them.
+--
+-- 0010 added the catalogue rows before the engine existed, so ModelManager.load()
+-- fell through to its hardcoded LlamaCppEngine and handed diffusion weights to
+-- llama.cpp. It refused them, correctly and unhelpfully:
+--
+--   FLUX:  unknown model architecture: 'flux'
+--   SD1.5: tensor name 1 is too long: 76 >= 64
+--
+-- The real damage was not the failed load. Making room for it evicted a working
+-- chat model first, so trying an image model cost the user their text model and
+-- gave nothing back.
+--
+-- Disabled rather than deleted: the rows are correct, the sizes are measured,
+-- and 0012 turns them back on once engines/stablediffusion.py can serve them.
+UPDATE models SET enabled = FALSE WHERE kind = 'image';

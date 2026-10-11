@@ -1,0 +1,19 @@
+[Unit]
+Description=Local LLM mock inference worker (verification only)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/local-llm/worker
+ExecStart=/opt/local-llm/worker/run-mock.sh
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=20
+StandardOutput=append:/var/log/localllm-mock-worker.log
+StandardError=append:/var/log/localllm-mock-worker.log
+
+[Install]
+WantedBy=multi-user.target

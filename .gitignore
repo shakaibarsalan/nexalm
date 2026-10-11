@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment / secrets  — NEVER commit
+.env
+.env.*
+!.env.example
+.env.secrets
+*.secret
+secrets/
+
+# Credentials
+kaggle.json
+.kaggle/
+cert.pem
+*.pem
+*.key
+!**/public*.key
+id_rsa*
+id_ed25519*
+*credentials*.json
+service-account*.json
+gdrive-*.json
+token.json
+
+# Model weights — must never enter git
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+*.ckpt
+models/
+model-cache/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local scratch
+tmp/
+.tmp/
+
+# Kaggle staging (created by scripts/launch-kaggle-worker.sh)
+.kaggle-stage/
+
+# Kaggle worker config staged at upload time (contains the worker token)
+worker-config.json
+
+# Prebuilt worker artifacts and generated images live on the server, not in git
+/artifacts/
+.llamacpp-bin/
+/images/
+
+# Vercel (the demo deploy of web/)
+.vercel/

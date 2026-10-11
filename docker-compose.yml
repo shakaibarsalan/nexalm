@@ -1,0 +1,91 @@
+# ─────────────────────────────────────────────────────────────
+#  NexaLM control plane: Postgres, the API and the web UI.
+#
+#  No GPU here. GPU workers on Kaggle or Colab dial in to /worker/ws.
+#
+#    cp .env.example .env      # fill in every CHANGE_ME
+#    docker compose up -d --build
+#
+#  Already running Postgres? Delete the `db` service, point DATABASE_URL at
+#  your instance, and create the role and database with
+#  scripts/provision-db.sh.
+# ─────────────────────────────────────────────────────────────
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: localllm-db
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: localllm
+      POSTGRES_USER: localllm_user
+      # Must match the password inside DATABASE_URL.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U localllm_user -d localllm"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: localllm-api
+    container_name: localllm-api
+    restart: unless-stopped
+    logging: *default-logging
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+    # No host port: reachable only through the web container.
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Prebuilt llama.cpp / sd.cpp binaries. Writable, because a GPU worker
+      # publishes the build it produced here so later sessions can skip it.
+      - ./artifacts:/app/artifacts
+      # Generated images, written by the upload endpoint.
+      - ./images:/app/images
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  web:
+    build:
+      context: ./web
+    image: localllm-web
+    container_name: localllm-web
+    restart: unless-stopped
+    logging: *default-logging
+    # Localhost only. Put a TLS reverse proxy or a tunnel in front of it:
+    # workers need wss:// to reach /worker/ws.
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8081}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:

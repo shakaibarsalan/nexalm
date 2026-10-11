@@ -1,0 +1,4 @@
+# Worker runtime dependencies — deliberately minimal so the Kaggle
+# environment stays reproducible and quick to provision.
+websockets>=13.0,<15
+httpx>=0.27,<0.29
